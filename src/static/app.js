@@ -27,7 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="participants-section">
               <strong>Participants inscrits :</strong>
               <ul class="participants-list">
-                ${details.participants.map(email => `<li>${email}</li>`).join("")}
+                ${details.participants.map(email => `<li><span>${email}</span> <button class=\"delete-participant\" title=\"Désinscrire\" data-activity=\"${name}\" data-email=\"${email}\">🗑️</button></li>`).join("")}
               </ul>
             </div>
           `;
@@ -48,7 +48,29 @@ document.addEventListener("DOMContentLoaded", () => {
           ${participantsHTML}
         `;
 
+
         activitiesList.appendChild(activityCard);
+
+        // Ajout du gestionnaire pour la suppression d'un participant (désinscription)
+        const deleteButtons = activityCard.querySelectorAll('.delete-participant');
+        deleteButtons.forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const activityName = btn.getAttribute('data-activity');
+            const email = btn.getAttribute('data-email');
+            try {
+              // Appel API pour désinscrire (si backend le permet, sinon juste suppression visuelle)
+              const response = await fetch(`/activities/${encodeURIComponent(activityName)}/unregister?email=${encodeURIComponent(email)}`, { method: 'POST' });
+              if (response.ok) {
+                // Retirer le participant de la liste
+                btn.closest('li').remove();
+              } else {
+                alert("Erreur lors de la désinscription.");
+              }
+            } catch (err) {
+              alert("Erreur réseau lors de la désinscription.");
+            }
+          });
+        });
 
         // Add option to select dropdown
         const option = document.createElement("option");
@@ -83,6 +105,8 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        // Rafraîchir la liste des activités pour afficher le nouveau participant
+        fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
